@@ -12,9 +12,14 @@ from services.tts import synthesize_speech
 from models.database import SessionLocal
 from scheduler.campaigns import send_reminder
 from .api.endpoints import router as appointment_router
+from fastapi import Request, HTTPException
+from fastapi.responses import JSONResponse
+import logging
 
 load_dotenv()
 mm = MemoryManager()
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Voice AI Agent", description="Real-time multilingual appointment booking")
 
@@ -80,8 +85,14 @@ async def websocket_voice(websocket: WebSocket, patient_id: str = "default_patie
             await mm.set_session(session_id, "intent", intent_output["intent"])
 
     except WebSocketDisconnect:
-        db.close()
-        print("Disconnected")
+        try:
+            await websocket.send_text(
+            "Sorry, something went wrong on our side. "
+            "Please try speaking again or call back later."
+        )
+        except:
+            db.close()
+            print("Disconnected")
         
 @app.post("/campaign/reminder")
 async def schedule_reminder(patient_id: str, message: str, lang: str):
@@ -89,6 +100,19 @@ async def schedule_reminder(patient_id: str, message: str, lang: str):
     return {"status": "Scheduled"}
 
 app.include_router(appointment_router)
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled error: {exc}", exc_info=True)
+    if isinstance(exc, HTTPException):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail}
+        )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error – please try again later"}
+    )
 
 if __name__ == "__main__":
     import uvicorn
