@@ -10,6 +10,7 @@ from memory.memory import MemoryManager
 from agent.agent import process_intent
 from services.tts import synthesize_speech
 from models.database import SessionLocal
+from scheduler.campaigns import send_reminder
 
 load_dotenv()
 mm = MemoryManager()
@@ -80,6 +81,11 @@ async def websocket_voice(websocket: WebSocket, patient_id: str = "default_patie
     except WebSocketDisconnect:
         db.close()
         print("Disconnected")
+        
+@app.post("/campaign/reminder")
+async def schedule_reminder(patient_id: str, message: str, lang: str):
+    send_reminder.delay(patient_id, message, lang)
+    return {"status": "Scheduled"}
 
 if __name__ == "__main__":
     import uvicorn
