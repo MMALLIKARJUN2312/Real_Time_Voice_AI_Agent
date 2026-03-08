@@ -1,9 +1,18 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware  
-import os
 from dotenv import load_dotenv
+import os
+import time
+import asyncio
+from services.stt import transcribe_audio
+from services.language_detection import detect_language
+from memory.memory import MemoryManager
+from agent.agent import process_intent
+from services.tts import synthesize_speech
+from models.database import SessionLocal
 
 load_dotenv()
+mm = MemoryManager()
 
 app = FastAPI(title="Voice AI Agent", description="Real-time multilingual appointment booking")
 
@@ -20,14 +29,57 @@ async def health_check():
     return {"status": "running", "message": "Voice AI Agent Backend Ready"}
 
 @app.websocket("/ws/voice")
-async def websocket_voice(websocket: WebSocket):
-    await websocket.accept()  
+async def websocket_voice(websocket: WebSocket, patient_id: str = "default_patient"):  
+    await websocket.accept()
+    session_id = str(time.time())
+    db = SessionLocal()
+    is_responding = False 
     try:
         while True:
-            data = await websocket.receive_text()
-            await websocket.send_text(f"Echo: {data}")  
+            data = await websocket.receive_bytes()  
+            start_time = time.perf_counter() 
+
+            # Speech to Text
+            stt_start = time.perf_counter()
+            text, stt_lang = await transcribe_audio(data)
+            stt_time = (time.perf_counter() - stt_start) * 1000
+            if not text: await websocket.send_text("STT error"); continue
+
+            # Detect language
+            detect_start = time.perf_counter()
+            lang = detect_language(text, stt_lang)
+            context = await mm.get_context(session_id, patient_id) 
+            lang = context.get("preferred_lang", lang)  
+            await mm.set_persistent(patient_id, {"preferred_lang": lang}) 
+            detect_time = (time.perf_counter() - detect_start) * 1000
+
+            # Agent
+            agent_start = time.perf_counter()
+            intent_output = await process_intent(text, context, lang, db)
+            response_text = intent_output.get("response", "Understood.")
+            agent_time = (time.perf_counter() - agent_start) * 1000
+
+            # Text to Speech
+            if not is_responding:
+                tts_start = time.perf_counter()
+                audio_bytes = await synthesize_speech(response_text, lang)
+                tts_time = (time.perf_counter() - tts_start) * 1000
+                await websocket.send_bytes(audio_bytes)  
+            else:
+                is_responding = False  
+
+            # Latency log
+            total_time = (time.perf_counter() - start_time) * 1000
+            logger.info(f"Latency: Total={total_time:.0f}ms | STT={stt_time:.0f} | Detect={detect_time:.0f} | Agent={agent_time:.0f} | TTS={tts_time:.0f}")
+            if total_time > 450: logger.warning("Latency exceeded target!")
+
+            # Update memory
+            await mm.set_session(session_id, "last_input", text)
+            await mm.set_session(session_id, "intent", intent_output["intent"])
+
     except WebSocketDisconnect:
-        print("Client disconnected")  
+        db.close()
+        print("Disconnected")
 
 if __name__ == "__main__":
     import uvicorn
