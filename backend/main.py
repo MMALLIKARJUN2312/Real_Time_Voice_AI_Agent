@@ -11,6 +11,7 @@ from agent.agent import process_intent
 from services.tts import synthesize_speech
 from models.database import SessionLocal
 from scheduler.campaigns import send_reminder
+from .api.endpoints import router as appointment_router
 
 load_dotenv()
 mm = MemoryManager()
@@ -86,6 +87,8 @@ async def websocket_voice(websocket: WebSocket, patient_id: str = "default_patie
 async def schedule_reminder(patient_id: str, message: str, lang: str):
     send_reminder.delay(patient_id, message, lang)
     return {"status": "Scheduled"}
+
+app.include_router(appointment_router)
 
 if __name__ == "__main__":
     import uvicorn
