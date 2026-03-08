@@ -1,7 +1,4 @@
-version: '3.9'
-
 services:
-
   backend:
     build:
       context: ./backend
@@ -14,8 +11,7 @@ services:
       - ./backend:/app
     depends_on:
       - redis
-      - db
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    command: python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   redis:
     image: redis:7-alpine
@@ -23,11 +19,10 @@ services:
       - "6379:6379"
 
   db:
-    image: nouchka/sqlite3:latest   
+    image: alpine:latest
     volumes:
       - sqlite-data:/data
-    working_dir: /data
-    command: ["sqlite3", "appointments.db"]
+    command: ["sh", "-c", "tail -f /dev/null"] 
 
   celery:
     build:
@@ -52,7 +47,8 @@ services:
     depends_on:
       - backend
     environment:
-      - VITE_BACKEND_URL=http://backend:8000
+      - VITE_BACKEND_URL=http://localhost:8000
+      - VITE_WS_URL=ws://localhost:8000/ws/voice
 
 volumes:
   sqlite-data:
