@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 
-from ..models.database import get_db
+from ..dependencies import get_db
 from ..services.scheduling import (
     check_availability,
     book_appointment,
