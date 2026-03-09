@@ -27,7 +27,7 @@ function App() {
       if (typeof event.data === 'string') {
         setLastMessage(event.data)
       } else {
-        const audioBlob = new Blob([event.data], { type: 'audio/wav' })
+        const audioBlob = new Blob([event.data], { type: 'audio/mpeg' })
         const audioUrl = URL.createObjectURL(audioBlob)
         const audio = new Audio(audioUrl)
         audio.play().catch(e => console.warn("Autoplay blocked:", e))
