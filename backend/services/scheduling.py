@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from ..models.models import Appointment, DoctorSchedule
+from models.models import Appointment, DoctorSchedule
 from datetime import datetime
 import json
 

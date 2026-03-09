@@ -1,8 +1,8 @@
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from ..models.database import Base
-from ..services.scheduling import check_availability, book_appointment
+from models.database import Base
+from services.scheduling import check_availability, book_appointment
 
 @pytest.fixture(scope="function")
 def db_session():

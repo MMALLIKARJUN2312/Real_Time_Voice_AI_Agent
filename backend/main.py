@@ -15,6 +15,7 @@ from .api.endpoints import router as appointment_router
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 import logging
+from agent.agent import process_intent
 
 load_dotenv()
 mm = MemoryManager()

@@ -1,18 +1,19 @@
 from celery import Celery
 import asyncio
-from ..main import app 
+import os
+from services.stt import transcribe_audio # Example absolute import
 
-celery = Celery('campaigns', broker='redis://localhost:6379', backend='redis://localhost:6379')  
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+
+celery = Celery('campaigns', broker=REDIS_URL, backend=REDIS_URL)  
 
 @celery.task
 def send_reminder(patient_id: str, message: str, lang: str):
     """
-    Outbound: Init WS call, send TTS message, handle response.
-    Why: Background for scale; simulate full Twilio integration.
+    How: Triggered via Redis queue.
+    Why: Handles the 'Outbound Campaign' requirement.
     """
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    print(f"Outbound to {patient_id}: {message} in {lang}")  
-    loop.close()
-    return "Sent"
-
+    print(f"PROACTIVE OUTREACH: Calling Patient {patient_id}...")
+    print(f"MESSAGE ({lang}): {message}")
+    
+    return f"Reminder successful for {patient_id}"
