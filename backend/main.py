@@ -11,7 +11,7 @@ from agent.agent import process_intent
 from services.tts import synthesize_speech
 from models.database import SessionLocal
 from scheduler.campaigns import send_reminder
-from .api.endpoints import router as appointment_router
+from api.endpoints import router as appointment_router
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 import logging
