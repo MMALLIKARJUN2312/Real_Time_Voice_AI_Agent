@@ -186,14 +186,14 @@ npm run dev
 
 ## Trade-offs & Future Improvements
 
-| Area                       | Decision / Trade-off                          | Reason / Future improvement                     |
--------------------------------------------------------------------------------------------------------------------------------|
-| TTS                        | gTTS instead of Google Cloud TTS              | No billing/API key needed for assessment        |
-| Database                   | SQLite instead of PostgreSQL                  | Simplicity & zero external deps for demo        |
-| STT model                  | Whisper base (not medium/large)               | Latency vs quality trade-off                    |
-| Outbound calls             | Simulated via Celery log (no real telephony)  | No Twilio/SIP integration in scope              |
-| Authentication             | None (patient_id passed via query param)      | Future: JWT + patient verification              |
-| Horizontal scaling         | Designed (multiple uvicorn workers + Celery)  | Ready for K8s / ECS with minor tweaks           |
+| Area               | Decision / Trade-off                        | Reason / Future improvement             |
+-------------------------------------------------------------------------------------------------------------|
+| TTS                | gTTS instead of Google Cloud TTS            | No billing/API key needed for assessment|
+| Database           | SQLite instead of PostgreSQL                | Simplicity & zero external deps for demo|
+| STT model          | Whisper base (not medium/large)             | Latency vs quality trade-off            |
+| Outbound calls     | Simulated via Celery log (no real telephony)| No Twilio/SIP integration in scope      |
+| Authentication     | None (patient_id passed via query param)    | Future: JWT + patient verification      |
+| Horizontal scaling | Designed (multiple uvicorn workers + Celery)| Ready for K8s / ECS with minor tweaks   |
 
 **Bonus Features implemented**:
 
